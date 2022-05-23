@@ -3,7 +3,7 @@
 namespace App\View\Components;
 
 use App\Models\Configs;
-use App\Models\SizeVariant;
+use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
 use Illuminate\View\Component;
@@ -28,8 +28,6 @@ class Photo extends Component
 	public $srcset2x = '';
 
 	public $layout = false;
-	public int $_w = SizeVariant::THUMBNAIL_DIM;
-	public int $_h = SizeVariant::THUMBNAIL_DIM;
 
 	/**
 	 * Create a new component instance.
@@ -46,7 +44,9 @@ class Photo extends Component
 		$this->is_starred = $data['is_starred'];
 		$this->is_public = $data['is_public'];
 
+		// TODO: Don't query the MIME type directly; use the methods of Photo or MediaFile
 		$isVideo = Str::contains($data['type'], 'video');
+		// TODO: Won't work any longer, as `type` always contains the true MIME type, not some faked "raw"
 		$isRaw = Str::contains($data['type'], 'raw');
 		$isLivePhoto = filled($data['live_Photo_filename']);
 
@@ -119,6 +119,8 @@ class Photo extends Component
 	 * Get the view / contents that represent the component.
 	 *
 	 * @return \Illuminate\Contracts\View\View|\Closure|string
+	 *
+	 * @throws BindingResolutionException
 	 */
 	public function render()
 	{

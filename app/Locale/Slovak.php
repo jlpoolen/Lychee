@@ -123,6 +123,8 @@ final class Slovak implements Language
 			'IMPORT_SERVER' => 'Importovať zo servera',
 			'NEW_ALBUM' => 'Nový album',
 			'NEW_TAG_ALBUM' => 'New Tag Album',
+			'UPLOAD_TRACK' => 'Upload track',
+			'DELETE_TRACK' => 'Delete track',
 
 			'TITLE_NEW_ALBUM' => 'Zadajte názov pre nový album:',
 			'UNTITLED' => 'Bez názvu',
@@ -137,7 +139,9 @@ final class Slovak implements Language
 
 			'STAR_PHOTO' => 'Obrázok označiť ako obľúbený',
 			'STAR' => 'označiť ako obľúbené',
+			'UNSTAR' => 'Unstar',
 			'STAR_ALL' => 'všetky označiť ako obľúbené',
+			'UNSTAR_ALL' => 'Unstar Selected',
 			'TAGS' => 'Štítky',
 			'TAGS_ALL' => 'Štítky pre všetky',
 			'UNSTAR_PHOTO' => 'Obrázok odstrániť z obľúbených',
@@ -149,6 +153,7 @@ final class Slovak implements Language
 			'DISPLAY_FULL_MAP' => 'Map',
 			'DIRECT_LINK' => 'Priamy link',
 			'DIRECT_LINKS' => 'Priame linky',
+			'QR_CODE' => 'QR Code',
 
 			'ALBUM_ABOUT' => 'O albume',
 			'ALBUM_BASICS' => 'Základné informácie',
@@ -494,6 +499,8 @@ final class Slovak implements Language
 
 			'PHOTO_EDIT_ROTATECWISE' => 'Rotate clockwise',
 			'PHOTO_EDIT_ROTATECCWISE' => 'Rotate counter-clockwise',
+
+			'ERROR_GPX' => 'Error loading GPX file: ',
 		];
 
 		return $locale;

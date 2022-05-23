@@ -122,6 +122,8 @@ final class ChineseSimplified implements Language
 			'IMPORT_SERVER' => '从服务器导入',
 			'NEW_ALBUM' => '新建相册',
 			'NEW_TAG_ALBUM' => '新建标签相册',
+			'UPLOAD_TRACK' => 'Upload track',
+			'DELETE_TRACK' => 'Delete track',
 
 			'TITLE_NEW_ALBUM' => '输入新相册的标题：',
 			'UNTITLED' => '未命名',
@@ -136,7 +138,9 @@ final class ChineseSimplified implements Language
 
 			'STAR_PHOTO' => '星标此照片',
 			'STAR' => '星标',
+			'UNSTAR' => 'Unstar',
 			'STAR_ALL' => '为所选照片加星标',
+			'UNSTAR_ALL' => 'Unstar Selected',
 			'TAGS' => '标签',
 			'TAGS_ALL' => '为所选照片打标签',
 			'UNSTAR_PHOTO' => '取消星标',
@@ -148,6 +152,7 @@ final class ChineseSimplified implements Language
 			'DISPLAY_FULL_MAP' => '地图',
 			'DIRECT_LINK' => '直链',
 			'DIRECT_LINKS' => '直链',
+			'QR_CODE' => 'QR Code',
 
 			'ALBUM_ABOUT' => '关于',
 			'ALBUM_BASICS' => '基本信息',
@@ -488,6 +493,8 @@ final class ChineseSimplified implements Language
 
 			'PHOTO_EDIT_ROTATECWISE' => '顺时针旋转',
 			'PHOTO_EDIT_ROTATECCWISE' => '逆时针旋转',
+
+			'ERROR_GPX' => 'Error loading GPX file: ',
 		];
 
 		return $locale;

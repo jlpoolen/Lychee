@@ -1,10 +1,11 @@
 <?php
 
-/** @noinspection PhpUndefinedClassInspection */
-
 namespace App\Console\Commands;
 
-use App\Actions\Photo\Extensions\Constants;
+use App\Contracts\ExternalLycheeException;
+use App\Exceptions\ModelDBException;
+use App\Exceptions\UnexpectedException;
+use App\Image\MediaFile;
 use App\Metadata\Extractor;
 use App\Models\Photo;
 use App\Models\SizeVariant;
@@ -13,8 +14,6 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ExifLens extends Command
 {
-	use Constants;
-
 	/**
 	 * The name and signature of the console command.
 	 *
@@ -30,101 +29,91 @@ class ExifLens extends Command
 	protected $description = 'Get EXIF data from pictures if missing';
 
 	/**
-	 * @var Extractor
-	 */
-	private $metadataExtractor;
-
-	/**
-	 * Create a new command instance.
-	 *
-	 * @param Extractor $metadataExtractor
-	 */
-	public function __construct(Extractor $metadataExtractor)
-	{
-		parent::__construct();
-
-		$this->metadataExtractor = $metadataExtractor;
-	}
-
-	/**
 	 * Execute the console command.
 	 *
-	 * @return mixed
+	 * @return int
+	 *
+	 * @throws ExternalLycheeException
 	 */
-	public function handle()
+	public function handle(): int
 	{
-		$argument = $this->argument('nb');
-		$from = $this->argument('from');
-		$timeout = $this->argument('tm');
-		set_time_limit($timeout);
+		try {
+			$argument = $this->argument('nb');
+			$from = $this->argument('from');
+			$timeout = $this->argument('tm');
+			set_time_limit($timeout);
 
-		// we use lens because this is the one which is most likely to be empty.
-		$photos = Photo::with(['size_variants' => function (HasMany $r) {
-			$r->where('type', '=', SizeVariant::ORIGINAL);
-		}])
-			->where('lens', '=', '')
-			->whereNotIn('type', $this->getValidVideoTypes())
-			->offset($from)
-			->limit($argument)
-			->get();
-		if (count($photos) == 0) {
-			$this->line('No pictures requires EXIF updates.');
+			// we use lens because this is the one which is most likely to be empty.
+			$photos = Photo::with(['size_variants' => function (HasMany $r) {
+				$r->where('type', '=', SizeVariant::ORIGINAL);
+			}])
+				->where('lens', '=', '')
+				->whereNotIn('type', MediaFile::SUPPORTED_VIDEO_MIME_TYPES)
+				->offset($from)
+				->limit($argument)
+				->get();
+			if (count($photos) == 0) {
+				$this->line('No pictures requires EXIF updates.');
 
-			return false;
-		}
+				return -1;
+			}
 
-		$i = $from;
-		/** @var Photo $photo */
-		foreach ($photos as $photo) {
-			$fullPath = $photo->size_variants->getOriginal()->full_path;
-			if (file_exists($fullPath)) {
-				$info = $this->metadataExtractor->extract($fullPath, $photo->type);
-				$updated = false;
-				if ($photo->size_variants->getOriginal()->filesize === 0 && $info['filesize'] != '') {
-					$photo->size_variants->getOriginal()->filesize = intval($info['filesize']);
-					$updated = true;
-				}
-				if ($photo->iso == '' && $info['iso'] != '') {
-					$photo->iso = $info['iso'];
-					$updated = true;
-				}
-				if ($photo->aperture == '' && $info['aperture'] != '') {
-					$photo->aperture = $info['aperture'];
-					$updated = true;
-				}
-				if ($photo->make == '' && $info['make'] != '') {
-					$photo->make = $info['make'];
-					$updated = true;
-				}
-				if ($photo->getAttribute('model') == '' && $info['model'] != '') {
-					$photo->setAttribute('model', $info['model']);
-					$updated = true;
-				}
-				if ($photo->lens == '' && $info['lens'] != '') {
-					$photo->lens = $info['lens'];
-					$updated = true;
-				}
-				if ($photo->shutter == '' && $info['shutter'] != '') {
-					$photo->shutter = $info['shutter'];
-					$updated = true;
-				}
-				if ($photo->focal == '' && $info['focal'] != '') {
-					$photo->focal = $info['focal'];
-					$updated = true;
-				}
-				if ($updated) {
-					if ($photo->save() && $photo->size_variants->getOriginal()->save()) {
+			$i = $from;
+			/** @var Photo $photo */
+			foreach ($photos as $photo) {
+				try {
+					$localFile = $photo->size_variants->getOriginal()->getFile()->toLocalFile();
+					$info = Extractor::createFromFile($localFile);
+					$updated = false;
+					if ($photo->size_variants->getOriginal()->filesize === 0) {
+						$photo->size_variants->getOriginal()->filesize = $localFile->getFilesize();
+						$updated = true;
+					}
+					if (empty($photo->iso) && !empty($info->iso)) {
+						$photo->iso = $info->iso;
+						$updated = true;
+					}
+					if (empty($photo->aperture) && !empty($info->aperture)) {
+						$photo->aperture = $info->aperture;
+						$updated = true;
+					}
+					if (empty($photo->make) && !empty($info->make)) {
+						$photo->make = $info->make;
+						$updated = true;
+					}
+					if (empty($photo->model) && !empty($info->model)) {
+						$photo->model = $info->model;
+						$updated = true;
+					}
+					if (empty($photo->lens) && !empty($info->lens)) {
+						$photo->lens = $info->lens;
+						$updated = true;
+					}
+					if (empty($photo->shutter) && !empty($info->shutter)) {
+						$photo->shutter = $info->shutter;
+						$updated = true;
+					}
+					if (empty($photo->focal) && !empty($info->focal)) {
+						$photo->focal = $info->focal;
+						$updated = true;
+					}
+					if ($updated) {
+						$photo->save();
+						$photo->size_variants->getOriginal()->save();
 						$this->line($i . ': EXIF updated for ' . $photo->title);
 					} else {
-						$this->line($i . ': Failed to update EXIF for ' . $photo->title);
+						$this->line($i . ': Could not get EXIF data/nothing to update for ' . $photo->title . '.');
 					}
-				} else {
-					$this->line($i . ': Could not get EXIF data/nothing to update for ' . $photo->title . '.');
+				} catch (ModelDBException $e) {
+					$this->line($i . ': Failed to update EXIF for ' . $photo->title);
+					$this->line($i . ': ' . $e->getMessage());
 				}
-			} else {
-				$this->line($i . ': File does not exist for ' . $photo->title . '.');
+				$i++;
 			}
-			$i++;
+
+			return 0;
+		} catch (\Throwable $e) {
+			throw new UnexpectedException($e);
 		}
 	}
 }

@@ -122,6 +122,8 @@ final class ChineseTraditional implements Language
 			'IMPORT_SERVER' => '從伺服器導入',
 			'NEW_ALBUM' => '創建新相簿',
 			'NEW_TAG_ALBUM' => '新的標籤相簿',
+			'UPLOAD_TRACK' => 'Upload track',
+			'DELETE_TRACK' => 'Delete track',
 
 			'TITLE_NEW_ALBUM' => '輸入相簿標題：',
 			'UNTITLED' => '未命名',
@@ -136,7 +138,9 @@ final class ChineseTraditional implements Language
 
 			'STAR_PHOTO' => '加入我的最愛',
 			'STAR' => '我的最愛',
+			'UNSTAR' => 'Unstar',
 			'STAR_ALL' => '將已選的標記為收藏夾',
+			'UNSTAR_ALL' => 'Unstar Selected',
 			'TAGS' => '標籤',
 			'TAGS_ALL' => '批量標籤',
 			'UNSTAR_PHOTO' => '從我的最愛中移除',
@@ -148,6 +152,7 @@ final class ChineseTraditional implements Language
 			'DISPLAY_FULL_MAP' => '地圖',
 			'DIRECT_LINK' => '外部連結',
 			'DIRECT_LINKS' => '內部連結',
+			'QR_CODE' => 'QR Code',
 
 			'ALBUM_ABOUT' => '關於',
 			'ALBUM_BASICS' => '基本資訊',
@@ -487,6 +492,8 @@ final class ChineseTraditional implements Language
 
 			'PHOTO_EDIT_ROTATECWISE' => '順時針旋轉',
 			'PHOTO_EDIT_ROTATECCWISE' => '逆時針旋轉',
+
+			'ERROR_GPX' => 'Error loading GPX file: ',
 		];
 
 		return $locale;

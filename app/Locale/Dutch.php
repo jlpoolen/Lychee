@@ -122,6 +122,8 @@ final class Dutch implements Language
 			'IMPORT_SERVER' => 'Importeer van Server',
 			'NEW_ALBUM' => 'Nieuw Album',
 			'NEW_TAG_ALBUM' => 'New Tag Album',
+			'UPLOAD_TRACK' => 'Upload track',
+			'DELETE_TRACK' => 'Delete track',
 
 			'TITLE_NEW_ALBUM' => 'Voer een titel voor het album in:',
 			'UNTITLED' => 'Ongetiteld',
@@ -136,7 +138,9 @@ final class Dutch implements Language
 
 			'STAR_PHOTO' => 'Markeer met ster',
 			'STAR' => 'Ster',
+			'UNSTAR' => 'Unstar',
 			'STAR_ALL' => 'Markeer geselecteerd als favorieten',
+			'UNSTAR_ALL' => 'Verwijder geselecteerd als favorieten',
 			'TAGS' => 'Tags',
 			'TAGS_ALL' => 'Geselecteerde tags',
 			'UNSTAR_PHOTO' => 'Verwijder ster markeering',
@@ -148,6 +152,7 @@ final class Dutch implements Language
 			'DISPLAY_FULL_MAP' => 'Map',
 			'DIRECT_LINK' => 'Directe Link',
 			'DIRECT_LINKS' => 'Directe Links',
+			'QR_CODE' => 'QR Code',
 
 			'ALBUM_ABOUT' => 'Over',
 			'ALBUM_BASICS' => 'Basics',
@@ -487,6 +492,8 @@ final class Dutch implements Language
 
 			'PHOTO_EDIT_ROTATECWISE' => 'Rotate clockwise',
 			'PHOTO_EDIT_ROTATECCWISE' => 'Rotate counter-clockwise',
+
+			'ERROR_GPX' => 'Error loading GPX file: ',
 		];
 
 		return $locale;

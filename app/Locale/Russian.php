@@ -122,6 +122,8 @@ final class Russian implements Language
 			'IMPORT_SERVER' => 'Импортировать с сервера',
 			'NEW_ALBUM' => 'Создать альбом',
 			'NEW_TAG_ALBUM' => 'New Tag Album',
+			'UPLOAD_TRACK' => 'Upload track',
+			'DELETE_TRACK' => 'Delete track',
 
 			'TITLE_NEW_ALBUM' => 'Название нового альбома:',
 			'UNTITLED' => 'Безымянный',
@@ -136,7 +138,9 @@ final class Russian implements Language
 
 			'STAR_PHOTO' => 'Отметить фото',
 			'STAR' => 'Отметить',
+			'UNSTAR' => 'Unstar',
 			'STAR_ALL' => 'Отметить все',
+			'UNSTAR_ALL' => 'Unstar Selected',
 			'TAGS' => 'Теги',
 			'TAGS_ALL' => 'теги для всех',
 			'UNSTAR_PHOTO' => 'Снять отметку',
@@ -148,6 +152,7 @@ final class Russian implements Language
 			'DISPLAY_FULL_MAP' => 'Map',
 			'DIRECT_LINK' => 'Прямая ссылка',
 			'DIRECT_LINKS' => 'Direct Links',
+			'QR_CODE' => 'QR Code',
 
 			'ALBUM_ABOUT' => 'Об альбоме',
 			'ALBUM_BASICS' => 'Основное',
@@ -488,6 +493,8 @@ final class Russian implements Language
 
 			'PHOTO_EDIT_ROTATECWISE' => 'Rotate clockwise',
 			'PHOTO_EDIT_ROTATECCWISE' => 'Rotate counter-clockwise',
+
+			'ERROR_GPX' => 'Error loading GPX file: ',
 		];
 
 		return $locale;

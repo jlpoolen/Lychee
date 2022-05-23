@@ -3,6 +3,9 @@
 namespace App\Models;
 
 use App\Actions\Album\Delete;
+use App\Exceptions\Internal\QueryBuilderException;
+use App\Exceptions\MediaFileOperationException;
+use App\Exceptions\ModelDBException;
 use App\Models\Extensions\AlbumBuilder;
 use App\Models\Extensions\BaseAlbum;
 use App\Relations\HasAlbumThumb;
@@ -11,7 +14,10 @@ use App\Relations\HasManyChildPhotos;
 use App\Relations\HasManyPhotosRecursively;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Relations\HasOne;
-use Illuminate\Database\Query\Builder;
+use Illuminate\Database\Query\Builder as BaseBuilder;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
+use Kalnoy\Nestedset\DescendantsRelation;
 use Kalnoy\Nestedset\Node;
 use Kalnoy\Nestedset\NodeTrait;
 
@@ -25,11 +31,15 @@ use Kalnoy\Nestedset\NodeTrait;
  * @property string            $license
  * @property string|null       $cover_id
  * @property Photo|null        $cover
+ * @property string|null       $track_short_path
+ * @property string|null       $track_url
  * @property int               $_lft
  * @property int               $_rgt
  *
- * @method static       AlbumBuilder query()
- * @method AlbumBuilder newModelQuery()
+ * @method static       AlbumBuilder query()                       Begin querying the model.
+ * @method static       AlbumBuilder with(array|string $relations) Begin querying the model with eager loading.
+ * @method AlbumBuilder newModelQuery()                            Get a new, "pure" query builder for the model's table without any scopes, eager loading, etc.
+ * @method AlbumBuilder newQuery()                                 Get a new query builder for the model's table.
  */
 class Album extends BaseAlbum implements Node
 {
@@ -73,12 +83,20 @@ class Album extends BaseAlbum implements Node
 		'_rgt',
 		'parent',     // avoid infinite recursions
 		'all_photos', // never serialize recursive child photos of an album, even if the relation is loaded
+		'track_short_path',
 	];
 
 	/**
 	 * The relationships that should always be eagerly loaded by default.
 	 */
 	protected $with = ['cover', 'thumb'];
+
+	/**
+	 * @var string[] The list of "virtual" attributes which do not exist as
+	 *               columns of the DB relation but which shall be appended to
+	 *               JSON from accessors
+	 */
+	protected $appends = ['track_url'];
 
 	/**
 	 * Return the relationship between this album and photos which are
@@ -118,6 +136,22 @@ class Album extends BaseAlbum implements Node
 	}
 
 	/**
+	 * Get query for descendants of the node.
+	 *
+	 * @return DescendantsRelation
+	 *
+	 * @throws QueryBuilderException
+	 */
+	public function descendants(): DescendantsRelation
+	{
+		try {
+			return new DescendantsRelation($this->newQuery(), $this);
+		} catch (\Throwable $e) {
+			throw new QueryBuilderException($e);
+		}
+	}
+
+	/**
 	 * Return the relationship between an album and its cover.
 	 *
 	 * @return HasOne
@@ -153,6 +187,9 @@ class Album extends BaseAlbum implements Node
 
 	/**
 	 * {@inheritDoc}
+	 *
+	 * @throws ModelDBException
+	 * @throws MediaFileOperationException
 	 */
 	public function performDeleteOnModel(): void
 	{
@@ -206,7 +243,7 @@ class Album extends BaseAlbum implements Node
 		$rgt = $this->_rgt;
 
 		BaseAlbumImpl::query()
-			->whereExists(function (Builder $q) use ($lft, $rgt) {
+			->whereExists(function (BaseBuilder $q) use ($lft, $rgt) {
 				$q
 					->from('albums')
 					->whereColumn('base_albums.id', '=', 'albums.id')
@@ -214,7 +251,7 @@ class Album extends BaseAlbum implements Node
 			})
 			->update(['owner_id' => $this->owner_id]);
 		Photo::query()
-			->whereExists(function (Builder $q) use ($lft, $rgt) {
+			->whereExists(function (BaseBuilder $q) use ($lft, $rgt) {
 				$q
 					->from('albums')
 					->whereColumn('photos.album_id', '=', 'albums.id')
@@ -224,10 +261,74 @@ class Album extends BaseAlbum implements Node
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * Create a new Eloquent query builder for the model.
+	 *
+	 * @param BaseBuilder $query
+	 *
+	 * @return AlbumBuilder
 	 */
 	public function newEloquentBuilder($query): AlbumBuilder
 	{
 		return new AlbumBuilder($query);
+	}
+
+	/**
+	 * Accessor for the "virtual" attribute {@link Album::$track_url}.
+	 *
+	 * This is a convenient method which wraps
+	 * {@link Album::$track_short_path} into
+	 * {@link \Illuminate\Support\Facades\Storage::url()}.
+	 *
+	 * @return string|null the url of the track
+	 */
+	public function getTrackUrlAttribute(): ?string
+	{
+		return $this->track_short_path !== null && $this->track_short_path !== '' ?
+			Storage::url($this->track_short_path) : null;
+	}
+
+	/**
+	 * Set the GPX track for the album.
+	 *
+	 * @param UploadedFile $file the GPX track file to be set
+	 *
+	 * @return void
+	 *
+	 * @throws ModelDBException
+	 * @throws MediaFileOperationException
+	 */
+	public function setTrack(UploadedFile $file): void
+	{
+		try {
+			if ($this->track_short_path !== null) {
+				Storage::delete($this->track_short_path);
+			}
+
+			$new_track_id = strtr(base64_encode(random_bytes(18)), '+/', '-_');
+			Storage::putFileAs('tracks/', $file, "$new_track_id.xml");
+			$this->track_short_path = "tracks/$new_track_id.xml";
+			$this->save();
+		} catch (ModelDBException $e) {
+			throw $e;
+		} catch (\Exception $e) {
+			throw new MediaFileOperationException('Could not save track file', $e);
+		}
+	}
+
+	/**
+	 * Delete the track of the album.
+	 *
+	 * @return void
+	 *
+	 * @throws ModelDBException
+	 */
+	public function deleteTrack(): void
+	{
+		if ($this->track_short_path === null) {
+			return;
+		}
+		Storage::delete($this->track_short_path);
+		$this->track_short_path = null;
+		$this->save();
 	}
 }

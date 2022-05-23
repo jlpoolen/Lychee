@@ -124,6 +124,8 @@ final class Italian implements Language
 			'IMPORT_SERVER' => 'Importa da Server',
 			'NEW_ALBUM' => 'Nuovo Album',
 			'NEW_TAG_ALBUM' => 'New Tag Album',
+			'UPLOAD_TRACK' => 'Upload track',
+			'DELETE_TRACK' => 'Delete track',
 
 			'TITLE_NEW_ALBUM' => 'Inserire un titolo per il nuovo album:',
 			'UNTITLED' => 'Senza Titolo',
@@ -138,7 +140,9 @@ final class Italian implements Language
 
 			'STAR_PHOTO' => 'Contrassegna la Foto come Speciale',
 			'STAR' => 'Contrassegna come Speciale',
+			'UNSTAR' => 'Unstar',
 			'STAR_ALL' => 'Contrassegna Tutto come Speciale',
+			'UNSTAR_ALL' => 'Unstar Selected',
 			'TAGS' => 'Tag',
 			'TAGS_ALL' => 'Tagga Tutto',
 			'UNSTAR_PHOTO' => 'Rimuovi dalle Foto Speciali',
@@ -150,6 +154,7 @@ final class Italian implements Language
 			'DISPLAY_FULL_MAP' => 'Map',
 			'DIRECT_LINK' => 'Link Diretto',
 			'DIRECT_LINKS' => 'Direct Links',
+			'QR_CODE' => 'QR Code',
 
 			'ALBUM_ABOUT' => 'Informazioni',
 			'ALBUM_BASICS' => 'Base',
@@ -491,6 +496,8 @@ final class Italian implements Language
 
 			'PHOTO_EDIT_ROTATECWISE' => 'Ruota in senso orario',
 			'PHOTO_EDIT_ROTATECCWISE' => 'Ruota in senso anti-orario',
+
+			'ERROR_GPX' => 'Error loading GPX file: ',
 		];
 
 		return $locale;

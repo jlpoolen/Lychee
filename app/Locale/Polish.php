@@ -122,6 +122,8 @@ final class Polish implements Language
 			'IMPORT_SERVER' => 'Importuj z serwera',
 			'NEW_ALBUM' => 'Dodaj album',
 			'NEW_TAG_ALBUM' => 'Dodaj album z tagami',
+			'UPLOAD_TRACK' => 'Upload track',
+			'DELETE_TRACK' => 'Delete track',
 
 			'TITLE_NEW_ALBUM' => 'Wpisz tytuł dla nowego albumu:',
 			'UNTITLED' => 'Bez nazwy',
@@ -136,7 +138,9 @@ final class Polish implements Language
 
 			'STAR_PHOTO' => 'Oznacz',
 			'STAR' => 'Oznacz',
+			'UNSTAR' => 'Unstar',
 			'STAR_ALL' => 'Oznacz zaznaczone',
+			'UNSTAR_ALL' => 'Unstar Selected',
 			'TAGS' => 'Otaguj',
 			'TAGS_ALL' => 'Otaguj zaznaczone',
 			'UNSTAR_PHOTO' => 'Cofnij oznaczenie',
@@ -148,6 +152,7 @@ final class Polish implements Language
 			'DISPLAY_FULL_MAP' => 'Mapa',
 			'DIRECT_LINK' => 'Link bezpośredni',
 			'DIRECT_LINKS' => 'Linki bezpośrednie',
+			'QR_CODE' => 'QR Code',
 
 			'ALBUM_ABOUT' => 'Informacje o albumie',
 			'ALBUM_BASICS' => 'Informacje podstawowe',
@@ -488,6 +493,8 @@ final class Polish implements Language
 
 			'PHOTO_EDIT_ROTATECWISE' => 'Obróć w prawo',
 			'PHOTO_EDIT_ROTATECCWISE' => 'Obróć w lewo',
+
+			'ERROR_GPX' => 'Error loading GPX file: ',
 		];
 
 		return $locale;

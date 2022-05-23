@@ -3,10 +3,13 @@
 namespace App\Actions\RSS;
 
 use App\Actions\PhotoAuthorisationProvider;
+use App\Contracts\InternalLycheeException;
+use App\Exceptions\Internal\FrameworkException;
 use App\Models\Configs;
 use App\Models\Photo;
+use Carbon\Exceptions\InvalidFormatException;
+use Carbon\Exceptions\UnitException;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Storage;
 use Spatie\Feed\FeedItem;
 
 class Generate
@@ -31,25 +34,33 @@ class Generate
 	{
 		$page_link = $this->create_link_to_page($photo_model);
 		$sizeVariant = $photo_model->size_variants->getOriginal();
-
-		return FeedItem::create([
+		$feedItem = [
 			'id' => $page_link,
 			'title' => $photo_model->title,
 			'summary' => $photo_model->description ?? '',
 			'updated' => $photo_model->updated_at,
 			'link' => $page_link,
 			'enclosure' => $sizeVariant->url,
-			'enclosureLength' => Storage::size($sizeVariant->short_path),
 			'enclosureType' => $photo_model->type,
+			'enclosureLength' => $sizeVariant->filesize,
 			'authorName' => $photo_model->owner->username,
-		]);
+		];
+
+		return FeedItem::create($feedItem);
 	}
 
+	/**
+	 * @throws InternalLycheeException
+	 */
 	public function do()
 	{
 		$rss_recent = intval(Configs::get_value('rss_recent_days', '7'));
 		$rss_max = Configs::get_Value('rss_max_items', '100');
-		$nowMinus = Carbon::now()->subDays($rss_recent)->toDateTimeString();
+		try {
+			$nowMinus = Carbon::now()->subDays($rss_recent)->toDateTimeString();
+		} catch (UnitException|InvalidFormatException $e) {
+			throw new FrameworkException('Date/Time component (Carbon)', $e);
+		}
 
 		$photos = $this->photoAuthorisationProvider
 			->applySearchabilityFilter(

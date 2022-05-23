@@ -1,5 +1,15 @@
 <?php
 
+/**
+ * We don't care for unhandled exceptions in tests.
+ * It is the nature of a test to throw an exception.
+ * Without this suppression we had 100+ Linter warning in this file which
+ * don't help anything.
+ *
+ * @noinspection PhpDocMissingThrowsInspection
+ * @noinspection PhpUnhandledExceptionInspection
+ */
+
 namespace Tests\Feature;
 
 use App\Facades\AccessControl;
@@ -12,7 +22,7 @@ use Tests\TestCase;
 
 class UsersTest extends TestCase
 {
-	public function testSetLogin()
+	public function testSetLogin(): void
 	{
 		/**
 		 * because there is no dependency injection in test cases.
@@ -35,13 +45,13 @@ class UsersTest extends TestCase
 			$sessions_test->login('lychee', 'password');
 			$sessions_test->logout();
 		} else {
-			$this->markTestSkipped('Username and Password are set. We do not bother testing further.');
+			static::markTestSkipped('Username and Password are set. We do not bother testing further.');
 		}
 
 		/*
 		 * We check that there are username and password set in the database
 		 */
-		$this->assertFalse($sessionFunctions->noLogin());
+		static::assertFalse($sessionFunctions->noLogin());
 
 		$sessions_test->login('foo', 'bar', 401);
 		$sessions_test->login('lychee', 'bar', 401);
@@ -56,7 +66,7 @@ class UsersTest extends TestCase
 		}
 	}
 
-	public function testUsers()
+	public function testUsers(): void
 	{
 		$sessions_test = new SessionUnitTest($this);
 		$users_test = new UsersUnitTest($this);
@@ -129,8 +139,7 @@ class UsersTest extends TestCase
 		]);
 
 		// 5
-		// TODO: Fix this on the server.side. The expected status code should be '409' (Conflict), not 200 (OK).
-		$users_test->add('test_abcd', 'test_abcd', true, true, 200, 'Error: username must be unique');
+		$users_test->add('test_abcd', 'test_abcd', true, true, 409, 'Username already exists');
 
 		// 6
 		$users_test->save($id, 'test_abcde', 'testing', false, true);
@@ -142,8 +151,7 @@ class UsersTest extends TestCase
 		$id2 = end($t)->id;
 
 		// 8
-		// TODO: Fix this on the server.side. The expected status code should be '409' (Conflict), not 200 (OK).
-		$users_test->save($id2, 'test_abcde', 'testing', false, true, 200, 'Error: username must be unique');
+		$users_test->save($id2, 'test_abcde', 'testing', false, true, 409, 'Username already exists');
 
 		// 9
 		$sessions_test->logout();
@@ -155,12 +163,10 @@ class UsersTest extends TestCase
 		$users_test->list(403);
 
 		// 12
-		// TODO: Fix this on the server.side. The expected status code should be '405' (Method Not Allowed), not 200 (OK).
-		$sessions_test->set_new('test_abcde', 'testing2', 200, '"Error: Locked account!"');
+		$sessions_test->set_new('test_abcde', 'testing2', 403, 'Account is locked');
 
 		// 13
-		// TODO: Fix this on the server.side. The expected status code should be '405' (Method Not Allowed), not 200 (OK).
-		$sessions_test->set_old('test_abcde', 'testing2', 'test_abcde', 'testing2', 200, '"Error: Locked account!"');
+		$sessions_test->set_old('test_abcde', 'testing2', 'test_abcde', 'testing2', 403, 'Account is locked');
 
 		// 14
 		$sessions_test->logout();
@@ -188,16 +194,13 @@ class UsersTest extends TestCase
 		$album_tests->get('unsorted', 403);
 
 		// 22
-		// TODO: Fix this on the server.side. The expected status code should be '401' (Not Authorized), not 200 (OK).
-		$sessions_test->set_new('test_abcde', 'testing2', 200, '"Error: Old username or password entered incorrectly!"');
+		$sessions_test->set_new('test_abcde', 'testing2', 401, 'Previous username or password are invalid');
 
 		// 23
-		// TODO: Fix this on the server.side. The expected status code should be '401' (Not Authorized), not 200 (OK).
-		$sessions_test->set_old('test_abcde', 'testing2', 'test_abcde', 'testing2', 200, '"Error: Old username or password entered incorrectly!"');
+		$sessions_test->set_old('test_abcde', 'testing2', 'test_abcde', 'testing2', 401, 'Previous username or password are invalid');
 
 		// 24
-		// TODO: Fix this on the server.side. The expected status code should be '409' (Conflict), not 200 (OK).
-		$sessions_test->set_old('test_abcd2', 'testing2', 'test_abcde', 'testing2', 200, '"Error: Username already exists."');
+		$sessions_test->set_old('test_abcd2', 'testing2', 'test_abcde', 'testing2', 409, 'Username already exists');
 
 		// 25
 		$sessions_test->set_old('test_abcdef', 'testing2', 'test_abcde', 'testing');
@@ -238,7 +241,11 @@ class UsersTest extends TestCase
 		$users_test->get_email();
 
 		// 34
-		$users_test->update_email('test@example.com');
+		// Note, this must be a proper email address for an existing mail
+		// domain, as the Laravel validator runs a DNS lookup.
+		// This means, `void@unexisting.nowhere` though syntactically being
+		// correct will trigger an error response.
+		$users_test->update_email('legal@support.github.com');
 
 		// 35
 		$users_test->get_email();

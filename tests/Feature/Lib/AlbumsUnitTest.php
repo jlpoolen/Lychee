@@ -1,5 +1,15 @@
 <?php
 
+/**
+ * We don't care for unhandled exceptions in tests.
+ * It is the nature of a test to throw an exception.
+ * Without this suppression we had 100+ Linter warning in this file which
+ * don't help anything.
+ *
+ * @noinspection PhpDocMissingThrowsInspection
+ * @noinspection PhpUnhandledExceptionInspection
+ */
+
 namespace Tests\Feature\Lib;
 
 use Illuminate\Testing\TestResponse;
@@ -30,12 +40,10 @@ class AlbumsUnitTest
 		int $expectedStatusCode = 201,
 		?string $assertSee = null
 	): TestResponse {
-		$params = [
+		$response = $this->testCase->postJson('/api/Album::add', [
 			'title' => $title,
 			'parent_id' => $parent_id,
-		];
-
-		$response = $this->testCase->json('POST', '/api/Album::add', $params);
+		]);
 		$response->assertStatus($expectedStatusCode);
 		if ($assertSee) {
 			$response->assertSee($assertSee, false);
@@ -48,7 +56,7 @@ class AlbumsUnitTest
 	 * Add an album.
 	 *
 	 * @param string      $title
-	 * @param string      $tags
+	 * @param string[]    $tags
 	 * @param int         $expectedStatusCode
 	 * @param string|null $assertSee
 	 *
@@ -56,16 +64,14 @@ class AlbumsUnitTest
 	 */
 	public function addByTags(
 		string $title,
-		string $tags,
+		array $tags,
 		int $expectedStatusCode = 201,
 		?string $assertSee = null
 	): TestResponse {
-		$params = [
+		$response = $this->testCase->postJson('/api/Album::addByTags', [
 			'title' => $title,
 			'tags' => $tags,
-		];
-
-		$response = $this->testCase->json('POST', '/api/Album::addByTags', $params);
+		]);
 		$response->assertStatus($expectedStatusCode);
 		if ($assertSee) {
 			$response->assertSee($assertSee, false);
@@ -77,18 +83,18 @@ class AlbumsUnitTest
 	/**
 	 * Move albums.
 	 *
-	 * @param string      $ids
-	 * @param string      $to
+	 * @param string[]    $ids
+	 * @param string|null $to
 	 * @param int         $expectedStatusCode
 	 * @param string|null $assertSee
 	 */
 	public function move(
-		string $ids,
+		array $ids,
 		?string $to,
 		int $expectedStatusCode = 204,
 		?string $assertSee = null
 	): void {
-		$response = $this->testCase->json('POST', '/api/Album::move', [
+		$response = $this->testCase->postJson('/api/Album::move', [
 			'albumID' => $to,
 			'albumIDs' => $ids,
 		]);
@@ -102,7 +108,6 @@ class AlbumsUnitTest
 	 * Get album by ID.
 	 *
 	 * @param string      $id
-	 * @param string      $password
 	 * @param int         $expectedStatusCode
 	 * @param string|null $assertSee
 	 *
@@ -113,8 +118,7 @@ class AlbumsUnitTest
 		int $expectedStatusCode = 200,
 		?string $assertSee = null
 	): TestResponse {
-		$response = $this->testCase->json(
-			'POST',
+		$response = $this->testCase->postJson(
 			'/api/Album::get',
 			['albumID' => $id]
 		);
@@ -138,8 +142,7 @@ class AlbumsUnitTest
 		int $expectedStatusCode = 200,
 		?string $assertSee = null
 	): void {
-		$response = $this->testCase->json(
-			'POST',
+		$response = $this->testCase->postJson(
 			'/api/Album::unlock',
 			['albumID' => $id, 'password' => $password]
 		);
@@ -150,27 +153,29 @@ class AlbumsUnitTest
 	}
 
 	/**
-	 * Check if we see id in the list of all visible albums
-	 * /!\ results varies depending if logged in or not !
+	 * Check if we see `id` in the list of all visible albums.
+	 *
+	 * Result varies depending on login state.
 	 *
 	 * @param string $id
 	 */
 	public function see_in_albums(string $id): void
 	{
-		$response = $this->testCase->json('POST', '/api/Albums::get', []);
+		$response = $this->testCase->postJson('/api/Albums::get');
 		$response->assertOk();
 		$response->assertSee($id, false);
 	}
 
 	/**
-	 * Check if we don't see id in the list of all visible albums
-	 * /!\ results varies depending if logged in or not !
+	 * Check if we don't see id in the list of all visible albums.
+	 *
+	 * Result varies depending on login state!
 	 *
 	 * @param string $id
 	 */
 	public function dont_see_in_albums(string $id): void
 	{
-		$response = $this->testCase->json('POST', '/api/Albums::get', []);
+		$response = $this->testCase->postJson('/api/Albums::get');
 		$response->assertOk();
 		$response->assertDontSee($id, false);
 	}
@@ -189,10 +194,9 @@ class AlbumsUnitTest
 		int $expectedStatusCode = 204,
 		?string $assertSee = null
 	): void {
-		$response = $this->testCase->json(
-			'POST',
+		$response = $this->testCase->postJson(
 			'/api/Album::setTitle',
-			['albumIDs' => $id, 'title' => $title]
+			['albumIDs' => [$id], 'title' => $title]
 		);
 		$response->assertStatus($expectedStatusCode);
 		if ($assertSee) {
@@ -214,8 +218,7 @@ class AlbumsUnitTest
 		int $expectedStatusCode = 204,
 		?string $assertSee = null
 	): void {
-		$response = $this->testCase->json(
-			'POST',
+		$response = $this->testCase->postJson(
 			'/api/Album::setDescription',
 			['albumID' => $id, 'description' => $description]
 		);
@@ -239,7 +242,7 @@ class AlbumsUnitTest
 		int $expectedStatusCode = 204,
 		?string $assertSee = null
 	): void {
-		$response = $this->testCase->json('POST', '/api/Album::setLicense', [
+		$response = $this->testCase->postJson('/api/Album::setLicense', [
 			'albumID' => $id,
 			'license' => $license,
 		]);
@@ -265,10 +268,10 @@ class AlbumsUnitTest
 		int $expectedStatusCode = 204,
 		?string $assertSee = null
 	): void {
-		$response = $this->testCase->json('POST', '/api/Album::setSorting', [
+		$response = $this->testCase->postJson('/api/Album::setSorting', [
 			'albumID' => $id,
-			'sortingCol' => $sortingCol,
-			'sortingOrder' => $sortingOrder,
+			'sorting_column' => $sortingCol,
+			'sorting_order' => $sortingOrder,
 		]);
 		$response->assertStatus($expectedStatusCode);
 		if ($assertSee) {
@@ -278,16 +281,16 @@ class AlbumsUnitTest
 
 	/**
 	 * @param string      $id
-	 * @param int         $full_photo
-	 * @param int         $public
-	 * @param int         $requiresLink
-	 * @param int         $nsfw
-	 * @param int         $downloadable
-	 * @param int         $share_button_visible
+	 * @param bool        $full_photo
+	 * @param bool        $public
+	 * @param bool        $requiresLink
+	 * @param bool        $nsfw
+	 * @param bool        $downloadable
+	 * @param bool        $share_button_visible
 	 * @param int         $expectedStatusCode
 	 * @param string|null $assertSee
 	 */
-	public function set_public(
+	public function set_protection_policy(
 		string $id,
 		bool $full_photo = true,
 		bool $public = true,
@@ -298,7 +301,7 @@ class AlbumsUnitTest
 		int $expectedStatusCode = 204,
 		?string $assertSee = null
 	): void {
-		$response = $this->testCase->json('POST', '/api/Album::setPublic', [
+		$response = $this->testCase->postJson('/api/Album::setProtectionPolicy', [
 			'grants_full_photo' => $full_photo,
 			'albumID' => $id,
 			'is_public' => $public,
@@ -315,17 +318,17 @@ class AlbumsUnitTest
 
 	/**
 	 * @param string      $id
-	 * @param string      $tags
+	 * @param string[]    $tags
 	 * @param int         $expectedStatusCode
 	 * @param string|null $assertSee
 	 */
 	public function set_tags(
 		string $id,
-		string $tags,
+		array $tags,
 		int $expectedStatusCode = 204,
 		?string $assertSee = null
 	): void {
-		$response = $this->testCase->json('POST', '/api/Album::setShowTags', [
+		$response = $this->testCase->postJson('/api/Album::setShowTags', [
 			'albumID' => $id,
 			'show_tags' => $tags,
 		]);
@@ -342,25 +345,29 @@ class AlbumsUnitTest
 	 */
 	public function download(string $id): void
 	{
-		$response = $this->testCase->call('GET', '/api/Album::getArchive', [
-			'albumIDs' => $id,
-		]);
-		$response->assertStatus(200);
+		$response = $this->testCase->getWithParameters(
+			'/api/Album::getArchive', [
+				'albumIDs' => $id,
+			], [
+				'Accept' => '*/*',
+			]
+		);
+		$response->assertOk();
 	}
 
 	/**
 	 * Delete.
 	 *
-	 * @param string      $id
+	 * @param string[]    $ids
 	 * @param int         $expectedStatusCode
 	 * @param string|null $assertSee
 	 */
 	public function delete(
-		string $id,
+		array $ids,
 		int $expectedStatusCode = 204,
 		?string $assertSee = null
 	): void {
-		$response = $this->testCase->postJson('/api/Album::delete', ['albumIDs' => $id]);
+		$response = $this->testCase->postJson('/api/Album::delete', ['albumIDs' => $ids]);
 		$response->assertStatus($expectedStatusCode);
 		if ($assertSee) {
 			$response->assertSee($assertSee, false);
@@ -379,7 +386,7 @@ class AlbumsUnitTest
 		int $expectedStatusCode = 200,
 		?string $assertSee = null
 	): TestResponse {
-		$response = $this->testCase->json('POST', '/api/Albums::getPositionData', []);
+		$response = $this->testCase->postJson('/api/Albums::getPositionData');
 		$response->assertStatus($expectedStatusCode);
 		if ($assertSee) {
 			$response->assertSee($assertSee, false);
@@ -402,7 +409,7 @@ class AlbumsUnitTest
 		int $expectedStatusCode = 200,
 		?string $assertSee = null
 	): TestResponse {
-		$response = $this->testCase->json('POST', '/api/Album::getPositionData', [
+		$response = $this->testCase->postJson('/api/Album::getPositionData', [
 			'albumID' => $id,
 			'includeSubAlbums' => false,
 		]);

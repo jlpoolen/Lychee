@@ -122,6 +122,8 @@ final class English implements Language
 			'IMPORT_SERVER' => 'Import from Server',
 			'NEW_ALBUM' => 'New Album',
 			'NEW_TAG_ALBUM' => 'New Tag Album',
+			'UPLOAD_TRACK' => 'Upload track',
+			'DELETE_TRACK' => 'Delete track',
 
 			'TITLE_NEW_ALBUM' => 'Enter a title for the new album:',
 			'UNTITLED' => 'Untilted',
@@ -136,7 +138,9 @@ final class English implements Language
 
 			'STAR_PHOTO' => 'Star Photo',
 			'STAR' => 'Star',
+			'UNSTAR' => 'Unstar',
 			'STAR_ALL' => 'Star Selected',
+			'UNSTAR_ALL' => 'Unstar Selected',
 			'TAGS' => 'Tag',
 			'TAGS_ALL' => 'Tag Selected',
 			'UNSTAR_PHOTO' => 'Unstar Photo',
@@ -148,6 +152,7 @@ final class English implements Language
 			'DISPLAY_FULL_MAP' => 'Map',
 			'DIRECT_LINK' => 'Direct Link',
 			'DIRECT_LINKS' => 'Direct Links',
+			'QR_CODE' => 'QR Code',
 
 			'ALBUM_ABOUT' => 'About',
 			'ALBUM_BASICS' => 'Basics',
@@ -488,6 +493,8 @@ final class English implements Language
 
 			'PHOTO_EDIT_ROTATECWISE' => 'Rotate clockwise',
 			'PHOTO_EDIT_ROTATECCWISE' => 'Rotate counter-clockwise',
+
+			'ERROR_GPX' => 'Error loading GPX file: ',
 		];
 
 		return $locale;

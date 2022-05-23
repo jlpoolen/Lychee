@@ -3,8 +3,6 @@
 namespace App\Actions\Photo;
 
 use App\Actions\Photo\Extensions\Checks;
-use App\Actions\Photo\Extensions\Constants;
-use App\Actions\Photo\Extensions\SourceFileInfo;
 use App\Actions\Photo\Strategies\AddDuplicateStrategy;
 use App\Actions\Photo\Strategies\AddPhotoPartnerStrategy;
 use App\Actions\Photo\Strategies\AddStandaloneStrategy;
@@ -12,19 +10,27 @@ use App\Actions\Photo\Strategies\AddStrategyParameters;
 use App\Actions\Photo\Strategies\AddVideoPartnerStrategy;
 use App\Actions\Photo\Strategies\ImportMode;
 use App\Actions\User\Notify;
-use App\Exceptions\JsonError;
-use App\Factories\AlbumFactory;
+use App\Contracts\AbstractAlbum;
+use App\Contracts\LycheeException;
+use App\Exceptions\ExternalComponentFailedException;
+use App\Exceptions\ExternalComponentMissingException;
+use App\Exceptions\Internal\IllegalOrderOfOperationException;
+use App\Exceptions\Internal\QueryBuilderException;
+use App\Exceptions\InvalidPropertyException;
+use App\Exceptions\MediaFileOperationException;
+use App\Image\MediaFile;
+use App\Image\NativeLocalFile;
 use App\Metadata\Extractor;
 use App\Models\Album;
 use App\Models\Photo;
 use App\SmartAlbums\BaseSmartAlbum;
 use App\SmartAlbums\PublicAlbum;
 use App\SmartAlbums\StarredAlbum;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class Create
 {
 	use Checks;
-	use Constants;
 
 	/** @var AddStrategyParameters the strategy parameters prepared and compiled by this class */
 	protected AddStrategyParameters $strategyParameters;
@@ -43,44 +49,42 @@ class Create
 	 * This method may create a new database entry or update an existing
 	 * database entry.
 	 *
-	 * @param SourceFileInfo $sourceFileInfo information about source file
-	 * @param string|null    $albumID        the targeted parent album either
-	 *                                       null, the id of a real album or
-	 *                                       (if it is a string) one of the
-	 *                                       array keys in
-	 *                                       {@link \App\Factories\AlbumFactory::BUILTIN_SMARTS}
+	 * @param NativeLocalFile    $sourceFile the source file
+	 * @param AbstractAlbum|null $album      the targeted parent album
 	 *
 	 * @return Photo the newly created or updated photo
 	 *
-	 * @throws \App\Exceptions\FolderIsNotWritable
-	 * @throws \App\Exceptions\JsonError
+	 * @throws ModelNotFoundException
+	 * @throws LycheeException
 	 */
-	public function add(SourceFileInfo $sourceFileInfo, ?string $albumID = null): Photo
+	public function add(NativeLocalFile $sourceFile, ?AbstractAlbum $album = null): Photo
 	{
+		$sourceFile->assertIsSupportedMediaOrAcceptedRaw();
+
 		// Check permissions
+		// throws InsufficientFilesystemPermissions
+		// TODO: Why do we explicitly perform this check here? We could just let the photo addition fail.
+		// There is similar odd test in {@link \App\Actions\Import\FromUrl::__construct()} which uses another "check" trait.
 		$this->checkPermissions();
 
 		// Fill in information about targeted parent album
-		$this->initParentId($albumID);
+		// throws InvalidPropertyException
+		$this->initParentAlbum($album);
 
-		// Fill in information about source file
-		$this->strategyParameters->kind = $this->file_kind($sourceFileInfo);
-		$this->strategyParameters->sourceFileInfo = $sourceFileInfo;
-
-		// Fill in meta data extracted from source file
-		$this->loadFileMetadata($sourceFileInfo);
+		// Fill in metadata extracted from source file
+		$this->loadFileMetadata($sourceFile);
 
 		// Look up potential duplicates/partners in order to select the
 		// proper strategy
-		$duplicate = $this->get_duplicate($this->strategyParameters->info['checksum']);
+		$duplicate = $this->get_duplicate(Extractor::checksum($sourceFile));
 		$livePartner = $this->findLivePartner(
-			$this->strategyParameters->info['live_photo_content_id'],
-			$this->strategyParameters->info['type'],
-			$this->strategyParameters->album?->id
+			$this->strategyParameters->exifInfo->livePhotoContentID,
+			$this->strategyParameters->exifInfo->type,
+			$this->strategyParameters->album
 		);
 
 		/*
-		 * From here we need to use a strategy depending if we have
+		 * From here we need to use a strategy depending on whether we have
 		 *
 		 *  - a duplicate
 		 *  - a "stand-alone" media file (i.e. a photo or video without a partner)
@@ -90,13 +94,16 @@ class Create
 		if ($duplicate) {
 			$strategy = new AddDuplicateStrategy($this->strategyParameters, $duplicate);
 		} else {
-			if ($livePartner == null) {
-				$strategy = new AddStandaloneStrategy($this->strategyParameters);
+			if ($livePartner === null) {
+				$strategy = new AddStandaloneStrategy($this->strategyParameters, $sourceFile);
 			} else {
-				if ($this->strategyParameters->kind === 'video') {
-					$strategy = new AddVideoPartnerStrategy($this->strategyParameters, $livePartner);
+				if ($sourceFile->isSupportedVideo()) {
+					$strategy = new AddVideoPartnerStrategy($this->strategyParameters, $sourceFile, $livePartner);
+				} elseif ($sourceFile->isSupportedImage()) {
+					$strategy = new AddPhotoPartnerStrategy($this->strategyParameters, $sourceFile, $livePartner);
 				} else {
-					$strategy = new AddPhotoPartnerStrategy($this->strategyParameters, $livePartner);
+					// Accepted, but unsupported raw files are added as stand-alone files
+					$strategy = new AddStandaloneStrategy($this->strategyParameters, $sourceFile);
 				}
 			}
 		}
@@ -113,28 +120,23 @@ class Create
 
 	/**
 	 * Extracts the meta-data of the source file and initializes
-	 * {@link AddStrategyParameters::$info} of {@link Create::$strategyParameters}.
+	 * {@link AddStrategyParameters::$exifInfo} of {@link Create::$strategyParameters}.
 	 *
-	 * @param SourceFileInfo $sourceFileInfo information about the source file
+	 * @param NativeLocalFile $sourceFile the source file
 	 *
-	 * @throws JsonError
+	 * @return void
+	 *
+	 * @throws ExternalComponentMissingException
+	 * @throws MediaFileOperationException
+	 * @throws ExternalComponentFailedException
 	 */
-	protected function loadFileMetadata(SourceFileInfo $sourceFileInfo)
+	protected function loadFileMetadata(NativeLocalFile $sourceFile): void
 	{
-		/* @var  Extractor $metadataExtractor */
-		$metadataExtractor = resolve(Extractor::class);
+		$this->strategyParameters->exifInfo = Extractor::createFromFile($sourceFile);
 
-		$this->strategyParameters->info = $metadataExtractor->extract($sourceFileInfo->getFile()->getAbsolutePath(), $this->strategyParameters->kind);
-		if ($this->strategyParameters->kind == 'raw') {
-			$this->strategyParameters->info['type'] = 'raw';
-		}
-		if (empty($this->strategyParameters->info['type'])) {
-			$this->strategyParameters->info['type'] = $sourceFileInfo->getOriginalMimeType();
-		}
-
-		// Use title of file if IPTC title missing
-		if ($this->strategyParameters->info['title'] === '') {
-			$this->strategyParameters->info['title'] = substr($sourceFileInfo->getOriginalName(), 0, 98);
+		// Use basename of file if IPTC title missing
+		if (empty($this->strategyParameters->exifInfo->title)) {
+			$this->strategyParameters->exifInfo->title = substr($sourceFile->getOriginalBasename(), 0, 98);
 		}
 	}
 
@@ -148,71 +150,74 @@ class Create
 	 *    (photo,video) pairs can be partners
 	 *  - which has no live partner yet
 	 *
-	 * @param ?string $contentID the content id to identify a matching partner
-	 * @param string  $mimeType  the mime type of the media which a partner is looked for, e.g. the returned {@link Photo} has an "opposed" mime type
-	 * @param ?string $albumID   the album of which the partner must be member of
+	 * @param string|null $contentID the content id to identify a matching partner
+	 * @param string      $mimeType  the mime type of the media which a partner is looked for, e.g. the returned {@link Photo} has an "opposed" mime type
+	 * @param Album|null  $album     the album of which the partner must be member of
 	 *
 	 * @return Photo|null The live partner if found
+	 *
+	 * @throws QueryBuilderException
 	 */
 	protected function findLivePartner(
-		?string $contentID, string $mimeType, ?string $albumID
+		?string $contentID, string $mimeType, ?Album $album
 	): ?Photo {
-		$livePartner = null;
-		// find a potential partner which has the same content id
-		if ($contentID) {
-			/** @var Photo|null $livePartner */
-			$livePartner = Photo::query()
-				->where('live_photo_content_id', '=', $contentID)
-				->where('album_id', '=', $albumID)
-				->whereNull('live_photo_short_path')->first();
-		}
-		if ($livePartner != null) {
+		try {
+			$livePartner = null;
+			// find a potential partner which has the same content id
+			if ($contentID) {
+				/** @var Photo|null $livePartner */
+				$livePartner = Photo::query()
+					->where('live_photo_content_id', '=', $contentID)
+					->where('album_id', '=', $album?->id)
+					->whereNull('live_photo_short_path')->first();
+			}
 			// if a potential partner has been found, ensure that it is of a
 			// different kind then the uploaded media.
-			// Photo+Photo or Video+Video does not work
-			// TODO: This condition is probably erroneous, if one of the types equals 'raw'.
-			if (in_array($mimeType, $this->validVideoTypes, true) === in_array($livePartner->type, $this->validVideoTypes, true)) {
+			if (
+				$livePartner !== null && !(
+					MediaFile::isSupportedImageMimeType($mimeType) && $livePartner->isVideo() ||
+					MediaFile::isSupportedVideoMimeType($mimeType) && $livePartner->isPhoto()
+				)
+			) {
 				$livePartner = null;
 			}
-		}
 
-		return $livePartner;
+			return $livePartner;
+		} catch (IllegalOrderOfOperationException $e) {
+			assert(false, new \AssertionError('IllegalOrderOfOperationException must not be thrown', $e));
+		}
 	}
 
 	/**
-	 * Loads the album for the designated ID and initializes
-	 * {@link AddStrategyParameters::$album}, {@link AddStrategyParameters::$public}
-	 * and {@link AddStrategyParameters::$star} of
-	 * {@link Create::$strategyParameters} accordingly.
+	 * Sets the (regular) parent album of {@link Create::$strategyParameters}
+	 * according to the provided parent album.
 	 *
-	 * @param string|null $albumID the targeted parent album either null,
-	 *                             the id of a real album or (if it is
-	 *                             string) one of the array keys in
-	 *                             {@link \App\Factories\AlbumFactory::BUILTIN_SMARTS}
+	 * If the provided parent album equals `null` or is already a (regular)
+	 * album, then the strategy is set to that album.
+	 * If the provided parent album is one of the built-in smart albums,
+	 * then the (regular) parent album of the strategy is set to `null` (aka
+	 * the root album) and the other properties of the strategy are tweaked
+	 * such that the photo will be shown by the smart album.
 	 *
-	 * @throws JsonError
-	 * @throws \Illuminate\Contracts\Container\BindingResolutionException
+	 * @param AbstractAlbum|null $album the targeted parent album
+	 *
+	 * @throws InvalidPropertyException
 	 */
-	protected function initParentId(?string $albumID = null)
+	protected function initParentAlbum(?AbstractAlbum $album = null)
 	{
-		/** @var AlbumFactory */
-		$factory = resolve(AlbumFactory::class);
-		if (!empty($albumID)) {
-			$album = $factory->findOrFail($albumID);
-
-			if ($album instanceof Album) {
-				// we save it so we don't have to query it again later
-				$this->strategyParameters->album = $album;
-			} elseif ($album instanceof BaseSmartAlbum) {
-				$this->strategyParameters->album = null;
-				if ($album instanceof PublicAlbum) {
-					$this->strategyParameters->is_public = true;
-				} elseif ($album instanceof StarredAlbum) {
-					$this->strategyParameters->is_starred = true;
-				}
-			} else {
-				throw new JsonError('This album does not support uploading');
+		if ($album === null) {
+			$this->strategyParameters->album = null;
+		} elseif ($album instanceof Album) {
+			$this->strategyParameters->album = $album;
+		} elseif ($album instanceof BaseSmartAlbum) {
+			$this->strategyParameters->album = null;
+			if ($album instanceof PublicAlbum) {
+				$this->strategyParameters->is_public = true;
+			} elseif ($album instanceof StarredAlbum) {
+				$this->strategyParameters->is_starred = true;
 			}
+		} else {
+			throw new InvalidPropertyException('The given parent album does not support uploading');
 		}
 	}
 }

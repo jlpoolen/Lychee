@@ -122,6 +122,8 @@ final class Swedish implements Language
 			'IMPORT_SERVER' => 'Importera från server',
 			'NEW_ALBUM' => 'Nytt album',
 			'NEW_TAG_ALBUM' => 'New Tag Album',
+			'UPLOAD_TRACK' => 'Upload track',
+			'DELETE_TRACK' => 'Delete track',
 
 			'TITLE_NEW_ALBUM' => 'Skriv en titel för det nya albumet:',
 			'UNTITLED' => 'Saknar titel',
@@ -136,7 +138,9 @@ final class Swedish implements Language
 
 			'STAR_PHOTO' => 'Stjärnmärk fotografi',
 			'STAR' => 'Stjärnmärk',
+			'UNSTAR' => 'Unstar',
 			'STAR_ALL' => 'Markera valda som favoriter',
+			'UNSTAR_ALL' => 'Unstar Selected',
 			'TAGS' => 'Tag',
 			'TAGS_ALL' => 'Vald taggen',
 			'UNSTAR_PHOTO' => 'Ta bort stjärnmärke',
@@ -148,6 +152,7 @@ final class Swedish implements Language
 			'DISPLAY_FULL_MAP' => 'Map',
 			'DIRECT_LINK' => 'Direktlänk',
 			'DIRECT_LINKS' => 'Direct Links',
+			'QR_CODE' => 'QR Code',
 
 			'ALBUM_ABOUT' => 'Om',
 			'ALBUM_BASICS' => 'Grundläggande',
@@ -487,6 +492,8 @@ final class Swedish implements Language
 
 			'PHOTO_EDIT_ROTATECWISE' => 'Rotate clockwise',
 			'PHOTO_EDIT_ROTATECCWISE' => 'Rotate counter-clockwise',
+
+			'ERROR_GPX' => 'Error loading GPX file: ',
 		];
 
 		return $locale;

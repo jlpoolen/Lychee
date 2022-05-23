@@ -3,50 +3,45 @@
 namespace App\Actions\Photo\Extensions;
 
 use App\Actions\Diagnostics\Checks\BasicPermissionCheck;
-use App\Exceptions\FolderIsNotWritable;
-use App\Exceptions\JsonError;
-use App\Facades\Helpers;
-use App\Models\Configs;
-use App\Models\Logs;
+use App\Exceptions\InsufficientFilesystemPermissions;
 use App\Models\Photo;
-use Illuminate\Support\Facades\Storage;
 
+/**
+ * Trait Checks.
+ *
+ * TODO: This trait should be liquidated.
+ * It is a random collection of methods without an inner relationship.
+ * In particular
+ *
+ *  - {@link Checks::checkPermissions()} is only used in a single place
+ *  - {@link Checks::get_duplicate()} is only used in a single place
+ */
 trait Checks
 {
-	use Constants;
-
 	/**
-	 * @throws FolderIsNotWritable
+	 * TODO: Move this method to where it belongs or maybe even nuke it entirely.
+	 *
+	 * There is a somehow related method
+	 * {@link \App\Actions\Import\Extensions\Checks::checkPermissions()}
+	 * which is also only used in a single place.
+	 *
+	 * @throws InsufficientFilesystemPermissions
 	 */
-	public function checkPermissions()
+	public function checkPermissions(): void
 	{
 		$errors = [];
 		$check = new BasicPermissionCheck();
 		$check->folders($errors);
 		if (count($errors) > 0) {
-			Logs::error(__METHOD__, __LINE__, 'An upload-folder is missing or not readable and writable');
-			foreach ($errors as $error) {
-				Logs::error(__METHOD__, __LINE__, $error);
-			}
-			throw new FolderIsNotWritable();
+			throw new InsufficientFilesystemPermissions('An upload-folder is missing or not readable and writable');
 		}
-	}
-
-	public function folderPermission($folder)
-	{
-		$path = Storage::path($folder);
-
-		if (Helpers::hasPermissions($path) === false) {
-			Logs::notice(__METHOD__, __LINE__, 'Skipped extraction of video from live photo, because ' . $path . ' is missing or not readable and writable.');
-			throw new FolderIsNotWritable();
-		}
-
-		return $path;
 	}
 
 	/**
 	 * Check if a picture has a duplicate
 	 * We compare the checksum to the other Photos or LivePhotos.
+	 *
+	 * TODO: Move this method to where it belongs.
 	 *
 	 * @param string $checksum
 	 *
@@ -62,55 +57,5 @@ trait Checks
 			->first();
 
 		return $photo;
-	}
-
-	/**
-	 * Returns the kind of a media file.
-	 *
-	 * The kind is one out of:
-	 *
-	 *  - `'photo'` if the media file is a photo
-	 *  - `'video'` if the media file is a video
-	 *  - `'raw'` if the media file is an accepted file, but none of the other
-	 *    two kinds (we only check extensions).
-	 *
-	 * @param SourceFileInfo $sourceFileInfo information about source file
-	 *
-	 * @return string either `'photo'`, `'video'` or `'raw'`
-	 *
-	 * @throws JsonError thrown if it is something else
-	 */
-	public function file_kind(SourceFileInfo $sourceFileInfo): string
-	{
-		$extension = $sourceFileInfo->getOriginalExtension();
-		// check raw files
-		$raw_formats = strtolower(Configs::get_value('raw_formats', ''));
-		if (in_array(strtolower($extension), explode('|', $raw_formats), true)) {
-			return 'raw';
-		}
-
-		if (in_array(strtolower($extension), $this->validExtensions, true)) {
-			$mimeType = $sourceFileInfo->getOriginalMimeType();
-			if (in_array($mimeType, $this->validVideoTypes, true)) {
-				return 'video';
-			}
-
-			return 'photo';
-		}
-
-		// let's check for the mimetype
-		// maybe we don't have a photo
-		if (!function_exists('exif_imagetype')) {
-			Logs::error(__METHOD__, __LINE__, 'EXIF library not loaded. Make sure exif is enabled in php.ini');
-			throw new JsonError('EXIF library not loaded on the server!');
-		}
-
-		$type = @exif_imagetype($sourceFileInfo->getFile()->getAbsolutePath());
-		if (in_array($type, $this->validTypes, true)) {
-			return 'photo';
-		}
-
-		Logs::error(__METHOD__, __LINE__, 'Photo type not supported: ' . $sourceFileInfo->getOriginalExtension());
-		throw new JsonError('Photo type not supported!');
 	}
 }

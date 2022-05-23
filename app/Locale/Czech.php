@@ -123,6 +123,8 @@ final class Czech implements Language
 			'IMPORT_SERVER' => 'Importovat ze serveru',
 			'NEW_ALBUM' => 'Nové album',
 			'NEW_TAG_ALBUM' => 'Nové tag album',
+			'UPLOAD_TRACK' => 'Upload track',
+			'DELETE_TRACK' => 'Delete track',
 
 			'TITLE_NEW_ALBUM' => 'Zadejte název nového alba:',
 			'UNTITLED' => 'Bezejmanné',
@@ -137,7 +139,9 @@ final class Czech implements Language
 
 			'STAR_PHOTO' => 'Označit jako oblíbené',
 			'STAR' => 'Označit jako oblíbené',
+			'UNSTAR' => 'Unstar',
 			'STAR_ALL' => 'Vše označit jako oblíbené',
+			'UNSTAR_ALL' => 'Unstar Selected',
 			'TAGS' => 'Štítek',
 			'TAGS_ALL' => 'Oštítkovat vše',
 			'UNSTAR_PHOTO' => 'Odebrat z oblíbených',
@@ -149,6 +153,7 @@ final class Czech implements Language
 			'DISPLAY_FULL_MAP' => 'Mapa',
 			'DIRECT_LINK' => 'Přímý odkaz',
 			'DIRECT_LINKS' => 'Přímé odkazy',
+			'QR_CODE' => 'QR Code',
 
 			'ALBUM_ABOUT' => 'O albu',
 			'ALBUM_BASICS' => 'Základní informace',
@@ -494,6 +499,8 @@ final class Czech implements Language
 
 			'PHOTO_EDIT_ROTATECWISE' => 'Otočit doprava',
 			'PHOTO_EDIT_ROTATECCWISE' => 'Otočit doleva',
+
+			'ERROR_GPX' => 'Error loading GPX file: ',
 		];
 
 		return $locale;

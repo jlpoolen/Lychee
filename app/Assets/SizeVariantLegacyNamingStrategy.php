@@ -3,6 +3,9 @@
 namespace App\Assets;
 
 use App\Contracts\SizeVariantNamingStrategy;
+use App\Exceptions\Internal\IllegalOrderOfOperationException;
+use App\Exceptions\Internal\InvalidSizeVariantException;
+use App\Exceptions\Internal\MissingValueException;
 use App\Models\Photo;
 use App\Models\SizeVariant;
 
@@ -37,7 +40,7 @@ class SizeVariantLegacyNamingStrategy extends SizeVariantNamingStrategy
 		parent::setPhoto($photo);
 		$this->originalExtension = '';
 		if ($this->photo && $sv = $this->photo->size_variants->getOriginal()) {
-			$this->originalExtension = $sv->getFile()->getExtension();
+			$this->originalExtension = $sv->getFile()->getOriginalExtension();
 		}
 	}
 
@@ -47,17 +50,21 @@ class SizeVariantLegacyNamingStrategy extends SizeVariantNamingStrategy
 	 * @param int $sizeVariant the size variant
 	 *
 	 * @return string The short path
+	 *
+	 * @throws InvalidSizeVariantException
+	 * @throws IllegalOrderOfOperationException
+	 * @throws MissingValueException
 	 */
 	public function generateShortPath(int $sizeVariant): string
 	{
 		if (SizeVariant::ORIGINAL > $sizeVariant || $sizeVariant > SizeVariant::THUMB) {
-			throw new \InvalidArgumentException('invalid $sizeVariant = ' . $sizeVariant);
+			throw new InvalidSizeVariantException('invalid $sizeVariant = ' . $sizeVariant);
 		}
 		if ($this->photo == null) {
-			throw new \InvalidArgumentException('associated photo model must not be null');
+			throw new IllegalOrderOfOperationException('associated photo model must not be null');
 		}
 		if (empty($this->photo->checksum)) {
-			throw new \BadFunctionCallException('cannot generate short path for photo before checksum has been set');
+			throw new IllegalOrderOfOperationException('cannot generate short path for photo before checksum has been set');
 		}
 		$directory = self::VARIANT_2_PATH_PREFIX[$sizeVariant] . '/';
 		if ($sizeVariant === SizeVariant::ORIGINAL && $this->photo->isRaw()) {
@@ -74,6 +81,12 @@ class SizeVariantLegacyNamingStrategy extends SizeVariantNamingStrategy
 		return $directory . $filename . $extension;
 	}
 
+	/**
+	 * Returns the file extension incl. the preceding dot.
+	 *
+	 * @throws MissingValueException
+	 * @throws IllegalOrderOfOperationException
+	 */
 	protected function generateExtension(int $sizeVariant): string
 	{
 		if ($sizeVariant === SizeVariant::THUMB ||
@@ -86,7 +99,7 @@ class SizeVariantLegacyNamingStrategy extends SizeVariantNamingStrategy
 			return $this->originalExtension;
 		} else {
 			if (empty($this->fallbackExtension)) {
-				throw new \LogicException('file extension must not be empty');
+				throw new MissingValueException('fallbackExtension');
 			}
 
 			return $this->fallbackExtension;

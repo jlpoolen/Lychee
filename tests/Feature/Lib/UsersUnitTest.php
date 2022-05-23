@@ -1,5 +1,15 @@
 <?php
 
+/**
+ * We don't care for unhandled exceptions in tests.
+ * It is the nature of a test to throw an exception.
+ * Without this suppression we had 100+ Linter warning in this file which
+ * don't help anything.
+ *
+ * @noinspection PhpDocMissingThrowsInspection
+ * @noinspection PhpUnhandledExceptionInspection
+ */
+
 namespace Tests\Feature\Lib;
 
 use Illuminate\Testing\TestResponse;
@@ -26,7 +36,7 @@ class UsersUnitTest
 		int $expectedStatusCode = 200,
 		?string $assertSee = null
 	): TestResponse {
-		$response = $this->testCase->json('POST', '/api/User::List', []);
+		$response = $this->testCase->postJson('/api/User::list');
 		$response->assertStatus($expectedStatusCode);
 		if ($assertSee) {
 			$response->assertSee($assertSee, false);
@@ -45,7 +55,7 @@ class UsersUnitTest
 		int $expectedStatusCode = 200,
 		?string $assertSee = null
 	): TestResponse {
-		$response = $this->testCase->json('POST', '/php/index.php', []);
+		$response = $this->testCase->postJson('/php/index.php');
 		$response->assertStatus($expectedStatusCode);
 		if ($assertSee) {
 			$response->assertSee($assertSee, false);
@@ -74,7 +84,7 @@ class UsersUnitTest
 		int $expectedStatusCode = 201,
 		?string $assertSee = null
 	): TestResponse {
-		$response = $this->testCase->json('POST', '/api/User::Create', [
+		$response = $this->testCase->postJson('/api/User::create', [
 			'username' => $username,
 			'password' => $password,
 			'may_upload' => $mayUpload,
@@ -91,18 +101,18 @@ class UsersUnitTest
 	/**
 	 * Delete a user.
 	 *
-	 * @param string      $id
+	 * @param int         $id
 	 * @param int         $expectedStatusCode
 	 * @param string|null $assertSee
 	 *
 	 * @return TestResponse
 	 */
 	public function delete(
-		string $id,
+		int $id,
 		int $expectedStatusCode = 204,
 		?string $assertSee = null
 	): TestResponse {
-		$response = $this->testCase->json('POST', '/api/User::Delete', [
+		$response = $this->testCase->postJson('/api/User::delete', [
 			'id' => $id,
 		]);
 		$response->assertStatus($expectedStatusCode);
@@ -116,7 +126,7 @@ class UsersUnitTest
 	/**
 	 * Save modifications to a user.
 	 *
-	 * @param string      $id
+	 * @param int         $id
 	 * @param string      $username
 	 * @param string      $password
 	 * @param bool        $mayUpload
@@ -127,7 +137,7 @@ class UsersUnitTest
 	 * @return TestResponse
 	 */
 	public function save(
-		string $id,
+		int $id,
 		string $username,
 		string $password,
 		bool $mayUpload = true,
@@ -135,7 +145,7 @@ class UsersUnitTest
 		int $expectedStatusCode = 204,
 		?string $assertSee = null
 	): TestResponse {
-		$response = $this->testCase->json('POST', '/api/User::Save', [
+		$response = $this->testCase->postJson('/api/User::save', [
 			'id' => $id,
 			'username' => $username,
 			'password' => $password,
@@ -164,7 +174,7 @@ class UsersUnitTest
 		int $expectedStatusCode = 204,
 		?string $assertSee = null
 	): TestResponse {
-		$response = $this->testCase->json('POST', '/api/User::UpdateEmail', [
+		$response = $this->testCase->postJson('/api/User::setEmail', [
 			'email' => $email,
 		]);
 		$response->assertStatus($expectedStatusCode);
@@ -187,7 +197,7 @@ class UsersUnitTest
 		int $expectedStatusCode = 200,
 		?string $assertSee = null
 	): TestResponse {
-		$response = $this->testCase->json('POST', '/api/User::GetEmail');
+		$response = $this->testCase->postJson('/api/User::getEmail');
 		$response->assertStatus($expectedStatusCode);
 		if ($assertSee) {
 			$response->assertSee($assertSee, false);

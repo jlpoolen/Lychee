@@ -122,6 +122,8 @@ final class NorwegianBokmal implements Language
 			'IMPORT_SERVER' => 'Importer fra Serveren',
 			'NEW_ALBUM' => 'Nytt Album',
 			'NEW_TAG_ALBUM' => 'New Tag Album',
+			'UPLOAD_TRACK' => 'Upload track',
+			'DELETE_TRACK' => 'Delete track',
 
 			'TITLE_NEW_ALBUM' => 'Legg inn en tittel for det nye albumet:',
 			'UNTITLED' => 'Uten Tittel',
@@ -136,7 +138,9 @@ final class NorwegianBokmal implements Language
 
 			'STAR_PHOTO' => 'Stjernemerk Bilde',
 			'STAR' => 'Stjernemerk',
+			'UNSTAR' => 'Unstar',
 			'STAR_ALL' => 'Stjernemerk Valgte',
+			'UNSTAR_ALL' => 'Unstar Selected',
 			'TAGS' => 'Tagg',
 			'TAGS_ALL' => 'Tagg Valgte',
 			'UNSTAR_PHOTO' => 'Fjern Stjernemerke',
@@ -148,6 +152,7 @@ final class NorwegianBokmal implements Language
 			'DISPLAY_FULL_MAP' => 'Kart',
 			'DIRECT_LINK' => 'Direktelenke',
 			'DIRECT_LINKS' => 'Direktelenker',
+			'QR_CODE' => 'QR Code',
 
 			'ALBUM_ABOUT' => 'Om',
 			'ALBUM_BASICS' => 'Grunnleggende',
@@ -488,6 +493,8 @@ final class NorwegianBokmal implements Language
 
 			'PHOTO_EDIT_ROTATECWISE' => 'Roter med klokken',
 			'PHOTO_EDIT_ROTATECCWISE' => 'Roter mot klokken',
+
+			'ERROR_GPX' => 'Error loading GPX file: ',
 		];
 
 		return $locale;

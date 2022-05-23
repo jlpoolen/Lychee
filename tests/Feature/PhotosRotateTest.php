@@ -1,10 +1,19 @@
 <?php
 
+/**
+ * We don't care for unhandled exceptions in tests.
+ * It is the nature of a test to throw an exception.
+ * Without this suppression we had 100+ Linter warning in this file which
+ * don't help anything.
+ *
+ * @noinspection PhpDocMissingThrowsInspection
+ * @noinspection PhpUnhandledExceptionInspection
+ */
+
 namespace Tests\Feature;
 
 use App\Facades\AccessControl;
 use App\Models\Configs;
-use Illuminate\Http\UploadedFile;
 use Tests\Feature\Lib\PhotosUnitTest;
 use Tests\TestCase;
 
@@ -13,27 +22,15 @@ class PhotosRotateTest extends TestCase
 	/**
 	 * @return void
 	 */
-	public function testRotate()
+	public function testRotate(): void
 	{
 		$photos_tests = new PhotosUnitTest($this);
 
 		AccessControl::log_as_id(0);
 
-		/*
-		* Make a copy of the image because import deletes the file, and we want to be
-		* able to use the test on a local machine and not just in CI.
-		*/
-		copy('tests/Samples/night.jpg', 'public/uploads/import/night.jpg');
-
-		$file = new UploadedFile(
-			'public/uploads/import/night.jpg',
-			'night.jpg',
-			'image/jpeg',
-			null,
-			true
+		$id = $photos_tests->upload(
+			TestCase::createUploadedFile(TestCase::SAMPLE_FILE_NIGHT_IMAGE)
 		);
-
-		$id = $photos_tests->upload($file);
 
 		$response = $photos_tests->get($id);
 		/*
@@ -60,13 +57,11 @@ class PhotosRotateTest extends TestCase
 
 		$editor_enabled_value = Configs::get_value('editor_enabled');
 		Configs::set('editor_enabled', '0');
-		$response = $this->post('/api/PhotoEditor::rotate', [
-			// somewhere in the Laravel middleware is a test which checks
-			// if `photoID` is a string; find where
-			'photoID' => (string) $id,
+		$response = $this->postJson('/api/PhotoEditor::rotate', [
+			'photoID' => $id,
 			'direction' => 1,
 		]);
-		$response->assertStatus(422);
+		$response->assertStatus(412);
 		$response->assertSee('support for rotation disabled by configuration');
 
 		Configs::set('editor_enabled', '1');
@@ -122,7 +117,7 @@ class PhotosRotateTest extends TestCase
 			],
 		]);
 
-		$photos_tests->delete($id);
+		$photos_tests->delete([$id]);
 
 		// reset
 		Configs::set('editor_enabled', $editor_enabled_value);

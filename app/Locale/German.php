@@ -124,6 +124,8 @@ final class German implements Language
 			'IMPORT_SERVER' => 'Von Server importieren',
 			'NEW_ALBUM' => 'Neues Album',
 			'NEW_TAG_ALBUM' => 'Neues Tag-Album',
+			'UPLOAD_TRACK' => 'Track hochladen',
+			'DELETE_TRACK' => 'Track löschen',
 
 			'TITLE_NEW_ALBUM' => 'Geben Sie einen Titel für das neue Album ein:',
 			'UNTITLED' => 'Unbenannt',
@@ -138,7 +140,9 @@ final class German implements Language
 
 			'STAR_PHOTO' => 'Foto als Favorit markieren',
 			'STAR' => 'Als Favorit markieren',
+			'UNSTAR' => 'Als Favorit demarkieren',
 			'STAR_ALL' => 'Ausgewählte als Favoriten markieren',
+			'UNSTAR_ALL' => 'Ausgewählte als Favoriten demarkieren',
 			'TAGS' => 'Taggen',
 			'TAGS_ALL' => 'Ausgewählte Taggen',
 			'UNSTAR_PHOTO' => 'Foto von Favoriten entfernen',
@@ -150,6 +154,7 @@ final class German implements Language
 			'DISPLAY_FULL_MAP' => 'Karte',
 			'DIRECT_LINK' => 'Direkter Link',
 			'DIRECT_LINKS' => 'Direkte Links',
+			'QR_CODE' => 'QR-Code',
 
 			'ALBUM_ABOUT' => 'Über',
 			'ALBUM_BASICS' => 'Grundlegende Informationen',
@@ -496,6 +501,8 @@ final class German implements Language
 
 			'PHOTO_EDIT_ROTATECWISE' => 'Im Uhrzeigersinn drehen',
 			'PHOTO_EDIT_ROTATECCWISE' => 'Gegen den Uhrzeigersinn drehen',
+
+			'ERROR_GPX' => 'Error loading GPX file: ',
 		];
 
 		return $locale;
